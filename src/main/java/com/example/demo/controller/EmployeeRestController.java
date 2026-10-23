@@ -1,9 +1,13 @@
 package com.example.demo.controller;
 
 import com.example.demo.entity.Employee;
+import com.example.demo.response.ResponseFactory;
+import com.example.demo.response.ResponseWrapper;
 import com.example.demo.service.EmployeeService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -14,47 +18,57 @@ import java.util.Map;
 @RequestMapping("/api")
 public class EmployeeRestController {
 
-    private EmployeeService employeeService;
+    private final EmployeeService employeeService;
+    private final ResponseFactory response;
 
     @Autowired
-    public EmployeeRestController(EmployeeService employeeService) {
-        this.employeeService = employeeService;
+    public EmployeeRestController(EmployeeService employeeService, ResponseFactory response) {
+        this.employeeService = employeeService;this.response = response;
     }
 
     @GetMapping("/employees")
-    public List<Employee> findAll() {
-        return employeeService.findAll();
+    public ResponseEntity<ResponseWrapper<List<Employee>>> findAll() {
+        List<Employee> employees = employeeService.findAll();
+        return response.ok("Zoznam zamestnancov úspešne načítaný", employees);
     }
+
     @GetMapping("/employees/{id}")
-    public Employee getEmployee(@PathVariable Integer id) {
+    public ResponseEntity<ResponseWrapper<Employee>> getEmployee(@PathVariable Integer id) {
         Employee employee = employeeService.findById(id);
+
         if (employee == null) {
-            throw new RuntimeException("Employee id not found - " + id);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Zamestnanec s ID " + id + " nebol nájdený");
         }
-        return employee;
+        return response.ok("Zamestnanec nájdený", employee);
     }
 
     @PostMapping("/employees")
-    public Employee addEmployee(@RequestBody Employee employee) {
+    public ResponseEntity<ResponseWrapper<Employee>> addEmployee(@Valid @RequestBody Employee employee) {
         employee.setId(null);
-        return employeeService.save(employee);
+        Employee savedEmployee = employeeService.save(employee);
+        return response.created("Zamestnanec úspešne pridaný", savedEmployee);
     }
 
     @PutMapping("/employees/{id}")
-    public Employee updateEmployee(@PathVariable Integer id, @RequestBody Employee employee) {
-        return employeeService.update(id, employee);
+    public ResponseEntity<ResponseWrapper<Employee>> updateEmployee(@PathVariable Integer id, @Valid @RequestBody Employee employee) {
+        Employee existingEmployee = employeeService.findById(id);
+        if (existingEmployee == null) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Zamestnanec s ID " + id + " nebol nájdený");
+        }
+
+        Employee updatedEmployee = employeeService.update(id, employee);
+        return response.ok("Zamestnanec úspešne aktualizovaný", updatedEmployee);
     }
 
     @DeleteMapping("/employees/{id}")
-    public String deleteEmployee(@PathVariable Integer id) {
+    public ResponseEntity<ResponseWrapper<Void>> deleteEmployee(@PathVariable Integer id) {
         Employee tempEmployee = employeeService.findById(id);
 
         if (tempEmployee == null) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Employee id not found - " + id);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Zamestnanec s ID " + id + " nebol nájdený");
         }
 
         employeeService.deleteById(id);
-
-        return "Deleted employee id - " + id;
+        return response.ok("Zamestnanec úspešne vymazaný");
     }
 }
