@@ -2,6 +2,7 @@ package com.example.demo.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.LocalDate;
 
@@ -23,6 +24,7 @@ public class Employee {
 
     @NotNull(message = "Dátum narodenia je povinný")
     @Past(message = "Dátum narodenia musí byť v minulosti")
+    @DateTimeFormat(pattern = "yyyy-MM-dd")
     @Column(name = "birth_date")
     private LocalDate birthDate;
 
@@ -45,9 +47,9 @@ public class Employee {
     @Column(name = "salary")
     private Integer salary;
 
-    @NotNull(message = "Údaj o plnom úväzku je povinný")
+    @NotNull(message = "Údaj o type úväzku je povinný")
     @Column(name = "full_time")
-    private Boolean fullTime;
+    private Integer fullTime;
 
     public Integer getId() {
         return id;
@@ -113,11 +115,11 @@ public class Employee {
         this.salary = salary;
     }
 
-    public Boolean getFullTime() {
+    public Integer getFullTime() {
         return fullTime;
     }
 
-    public void setFullTime(Boolean fullTime) {
+    public void setFullTime(Integer fullTime) {
         this.fullTime = fullTime;
     }
 }
